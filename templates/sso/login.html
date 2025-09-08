@@ -1,0 +1,163 @@
+{% extends 'sso/base.html' %}
+
+{% block title %}ورود - سرویس احراز هویت مرکزی{% endblock %}
+{% block page_title %}ورود به سیستم{% endblock %}
+{% block page_subtitle %}برای دسترسی به {{ client.name }} وارد شوید{% endblock %}
+
+{% block content %}
+<form id="loginForm" method="post" action="{% url 'sso:sso_login' %}" enctype="application/json">
+    {% csrf_token %}
+    
+    <!-- Hidden fields for SSO parameters -->
+    <input type="hidden" name="client_id" value="{{ client_id }}">
+    <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+    {% if state %}<input type="hidden" name="state" value="{{ state }}">{% endif %}
+    
+    <div class="form-floating">
+        <input type="text" class="form-control" id="username" name="username" placeholder="نام کاربری" required>
+        <label for="username">
+            <i class="fas fa-user me-2"></i>نام کاربری
+        </label>
+    </div>
+    
+    <div class="form-floating position-relative">
+        <input type="password" class="form-control" id="password" name="password" placeholder="رمز عبور" required>
+        <label for="password">
+            <i class="fas fa-lock me-2"></i>رمز عبور
+        </label>
+        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me">
+            <label class="form-check-label" for="rememberMe">
+                مرا به خاطر بسپار
+            </label>
+        </div>
+        <a href="#" class="text-decoration-none" onclick="showForgotPassword()">
+            فراموشی رمز عبور؟
+        </a>
+    </div>
+    
+    <button type="submit" class="btn btn-primary w-100 mb-3">
+        <span class="loading">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+        </span>
+        <i class="fas fa-sign-in-alt me-2"></i>
+        ورود به سیستم
+    </button>
+    
+    <div class="text-center">
+        <p class="mb-0">حساب کاربری ندارید؟</p>
+        <a href="{% url 'sso:sso_register' %}?client_id={{ client_id }}&redirect_uri={{ redirect_uri|urlencode }}{% if state %}&state={{ state }}{% endif %}" 
+           class="btn btn-outline-primary w-100 mt-2">
+            <i class="fas fa-user-plus me-2"></i>
+            ثبت‌نام جدید
+        </a>
+    </div>
+</form>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">فراموشی رمز عبور</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>برای بازیابی رمز عبور، لطفاً با پشتیبانی تماس بگیرید.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>پشتیبانی:</strong> support@avinoo.ir
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        setLoading('loginForm', true);
+        
+        // Get form data
+        const formData = new FormData(this);
+        const data = {
+            username: formData.get('username'),
+            password: formData.get('password'),
+            client_id: formData.get('client_id'),
+            redirect_uri: formData.get('redirect_uri'),
+            state: formData.get('state')
+        };
+        
+        // Send AJAX request
+        fetch('{% url "sso:sso_login" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            setLoading('loginForm', false);
+            
+            if (data.success) {
+                // Redirect to callback URL
+                window.location.href = data.redirect_uri;
+            } else {
+                showAlert(data.error || 'خطا در ورود به سیستم', 'danger');
+            }
+        })
+        .catch(error => {
+            setLoading('loginForm', false);
+            showAlert('خطا در ارتباط با سرور', 'danger');
+            console.error('Error:', error);
+        });
+    });
+    
+    function showForgotPassword() {
+        const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+        modal.show();
+    }
+    
+    function setLoading(formId, loading) {
+        const form = document.getElementById(formId);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const loadingSpan = submitBtn.querySelector('.loading');
+        const iconSpan = submitBtn.querySelector('i:not(.fa-spinner)');
+        
+        if (loading) {
+            loadingSpan.style.display = 'inline';
+            iconSpan.style.display = 'none';
+            submitBtn.disabled = true;
+        } else {
+            loadingSpan.style.display = 'none';
+            iconSpan.style.display = 'inline';
+            submitBtn.disabled = false;
+        }
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById('loginForm');
+        form.insertBefore(alertDiv, form.firstChild);
+    }
+</script>
+{% endblock %}

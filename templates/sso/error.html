@@ -1,0 +1,81 @@
+{% extends 'sso/base.html' %}
+
+{% block title %}خطا - سرویس احراز هویت مرکزی{% endblock %}
+{% block page_title %}خطا در احراز هویت{% endblock %}
+{% block page_subtitle %}متأسفانه خطایی رخ داده است{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <div class="mb-4">
+        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+    </div>
+    
+    <div class="alert alert-danger">
+        <h5 class="alert-heading">
+            <i class="fas fa-times-circle me-2"></i>
+            خطا در احراز هویت
+        </h5>
+        <p class="mb-0">{{ error|default:"خطای نامشخصی رخ داده است." }}</p>
+    </div>
+    
+    <div class="mt-4">
+        <h6>راه‌های حل مشکل:</h6>
+        <ul class="list-unstyled text-start">
+            <li class="mb-2">
+                <i class="fas fa-check text-success me-2"></i>
+                اطمینان حاصل کنید که لینک صحیح است
+            </li>
+            <li class="mb-2">
+                <i class="fas fa-check text-success me-2"></i>
+                دوباره از اپلیکیشن اصلی تلاش کنید
+            </li>
+            <li class="mb-2">
+                <i class="fas fa-check text-success me-2"></i>
+                در صورت تکرار مشکل، با پشتیبانی تماس بگیرید
+            </li>
+        </ul>
+    </div>
+    
+    <div class="mt-4">
+        <button type="button" class="btn btn-primary me-2" onclick="window.close()">
+            <i class="fas fa-times me-2"></i>
+            بستن پنجره
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" onclick="window.history.back()">
+            <i class="fas fa-arrow-right me-2"></i>
+            بازگشت
+        </button>
+    </div>
+    
+    <div class="mt-4">
+        <div class="alert alert-info">
+            <h6 class="alert-heading">
+                <i class="fas fa-info-circle me-2"></i>
+                نیاز به کمک دارید؟
+            </h6>
+            <p class="mb-0">
+                با تیم پشتیبانی ما تماس بگیرید:
+                <br>
+                <strong>ایمیل:</strong> support@avinoo.ir
+                <br>
+                <strong>تلفن:</strong> 021-12345678
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-close after 30 seconds if opened in popup
+    if (window.opener) {
+        setTimeout(() => {
+            window.close();
+        }, 30000);
+    }
+    
+    // Log error for debugging
+    console.error('SSO Error:', '{{ error|default:"Unknown error" }}');
+</script>
+{% endblock %}

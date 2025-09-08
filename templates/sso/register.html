@@ -1,0 +1,217 @@
+{% extends 'sso/base.html' %}
+
+{% block title %}ثبت‌نام - سرویس احراز هویت مرکزی{% endblock %}
+{% block page_title %}ثبت‌نام جدید{% endblock %}
+{% block page_subtitle %}حساب کاربری جدید در {{ client.name }} ایجاد کنید{% endblock %}
+
+{% block content %}
+<form id="registerForm" method="post" action="{% url 'sso:sso_register' %}">
+    {% csrf_token %}
+    
+    <!-- Hidden fields for SSO parameters -->
+    <input type="hidden" name="client_id" value="{{ client_id }}">
+    <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+    {% if state %}<input type="hidden" name="state" value="{{ state }}">{% endif %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="نام" required>
+                <label for="first_name">
+                    <i class="fas fa-user me-2"></i>نام
+                </label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="نام خانوادگی" required>
+                <label for="last_name">
+                    <i class="fas fa-user me-2"></i>نام خانوادگی
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="username" name="username" placeholder="نام کاربری" required>
+        <label for="username">
+            <i class="fas fa-at me-2"></i>نام کاربری
+        </label>
+        <div class="form-text">نام کاربری باید منحصر به فرد باشد</div>
+    </div>
+    
+    <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="email" name="email" placeholder="ایمیل" required>
+        <label for="email">
+            <i class="fas fa-envelope me-2"></i>ایمیل
+        </label>
+    </div>
+    
+    <div class="form-floating mb-3">
+        <input type="tel" class="form-control" id="phone_number" name="phone_number" placeholder="شماره تلفن">
+        <label for="phone_number">
+            <i class="fas fa-phone me-2"></i>شماره تلفن
+        </label>
+        <div class="form-text">اختیاری - برای بازیابی رمز عبور</div>
+    </div>
+    
+    <div class="form-floating mb-3 position-relative">
+        <input type="password" class="form-control" id="password" name="password" placeholder="رمز عبور" required>
+        <label for="password">
+            <i class="fas fa-lock me-2"></i>رمز عبور
+        </label>
+        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+            <i class="fas fa-eye"></i>
+        </button>
+        <div class="form-text">حداقل 8 کاراکتر شامل حروف و اعداد</div>
+    </div>
+    
+    <div class="form-floating mb-3 position-relative">
+        <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="تأیید رمز عبور" required>
+        <label for="password_confirm">
+            <i class="fas fa-lock me-2"></i>تأیید رمز عبور
+        </label>
+        <button type="button" class="password-toggle" onclick="togglePassword('password_confirm')">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+        <label class="form-check-label" for="terms">
+            با <a href="#" class="text-decoration-none">شرایط و قوانین</a> موافقم
+        </label>
+    </div>
+    
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+        <label class="form-check-label" for="newsletter">
+            دریافت خبرنامه و اطلاعیه‌ها
+        </label>
+    </div>
+    
+    <button type="submit" class="btn btn-primary w-100 mb-3">
+        <span class="loading">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+        </span>
+        <i class="fas fa-user-plus me-2"></i>
+        ایجاد حساب کاربری
+    </button>
+    
+    <div class="text-center">
+        <p class="mb-0">قبلاً حساب کاربری دارید؟</p>
+        <a href="{% url 'sso:sso_login' %}?client_id={{ client_id }}&redirect_uri={{ redirect_uri|urlencode }}{% if state %}&state={{ state }}{% endif %}" 
+           class="btn btn-outline-primary w-100 mt-2">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            ورود به سیستم
+        </a>
+    </div>
+</form>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">شرایط و قوانین استفاده</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. تعهدات کاربر</h6>
+                <p>کاربر متعهد است اطلاعات صحیح و به‌روز ارائه دهد.</p>
+                
+                <h6>2. محرمانگی اطلاعات</h6>
+                <p>اطلاعات شخصی کاربران محرمانه بوده و در اختیار اشخاص ثالث قرار نمی‌گیرد.</p>
+                
+                <h6>3. مسئولیت‌ها</h6>
+                <p>کاربر مسئول حفظ امنیت حساب کاربری خود است.</p>
+                
+                <h6>4. تغییرات</h6>
+                <p>این شرایط ممکن است در آینده تغییر کند.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        // Validate password match
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password_confirm').value;
+        
+        if (password !== passwordConfirm) {
+            e.preventDefault();
+            showAlert('رمزهای عبور مطابقت ندارند', 'danger');
+            return;
+        }
+        
+        // Validate password strength
+        if (password.length < 8) {
+            e.preventDefault();
+            showAlert('رمز عبور باید حداقل 8 کاراکتر باشد', 'danger');
+            return;
+        }
+        
+        setLoading('registerForm', true);
+        
+        // Simulate API call (replace with actual AJAX call)
+        setTimeout(() => {
+            setLoading('registerForm', false);
+        }, 2000);
+    });
+    
+    // Real-time password validation
+    document.getElementById('password_confirm').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const passwordConfirm = this.value;
+        
+        if (passwordConfirm && password !== passwordConfirm) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    // Username availability check (simulated)
+    document.getElementById('username').addEventListener('blur', function() {
+        const username = this.value;
+        if (username.length >= 3) {
+            // Simulate API call
+            setTimeout(() => {
+                if (username === 'admin' || username === 'test') {
+                    this.classList.add('is-invalid');
+                    showAlert('این نام کاربری قبلاً استفاده شده است', 'warning');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            }, 500);
+        }
+    });
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById('registerForm');
+        form.insertBefore(alertDiv, form.firstChild);
+    }
+    
+    // Handle form errors
+    {% if form.errors %}
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                showAlert('{{ error }}', 'danger');
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+</script>
+{% endblock %}

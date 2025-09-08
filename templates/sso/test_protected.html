@@ -1,0 +1,279 @@
+{% extends "sso/base.html" %}
+{% load static %}
+
+{% block title %}صفحه تستی محافظت شده - Auth Service{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .success-badge {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .user-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #007bff;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #6c757d;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #0056b3;
+        transform: translateY(-2px);
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+    }
+    
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+    
+    .test-features {
+        background: #e3f2fd;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 2rem;
+    }
+    
+    .test-features h3 {
+        color: #1976d2;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .feature-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #bbdefb;
+    }
+    
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-list li::before {
+        content: "✅ ";
+        margin-right: 0.5rem;
+    }
+    
+    .timestamp {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="test-container">
+    <div class="success-badge">
+        🎉 موفقیت! شما با موفقیت وارد شده‌اید
+    </div>
+    
+    <div class="user-info">
+        <h2>اطلاعات کاربر</h2>
+        <div class="info-row">
+            <span class="info-label">نام کاربری:</span>
+            <span class="info-value">{{ user.username }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">نام:</span>
+            <span class="info-value">{{ user.first_name }} {{ user.last_name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">ایمیل:</span>
+            <span class="info-value">{{ user.email }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">شماره تلفن:</span>
+            <span class="info-value">{{ user.phone_number|default:"ثبت نشده" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">وضعیت:</span>
+            <span class="info-value">
+                {% if user.is_active %}
+                    <span style="color: #28a745;">فعال</span>
+                {% else %}
+                    <span style="color: #dc3545;">غیرفعال</span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">آخرین ورود:</span>
+            <span class="info-value">
+                {% if login_time %}
+                    {{ login_time|date:"Y/m/d H:i:s" }}
+                {% else %}
+                    اولین ورود
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">تاریخ عضویت:</span>
+            <span class="info-value">{{ user.date_joined|date:"Y/m/d H:i:s" }}</span>
+        </div>
+    </div>
+    
+    <div class="test-features">
+        <h3>ویژگی‌های تست شده:</h3>
+        <ul class="feature-list">
+            <li>احراز هویت موفق</li>
+            <li>انتقال خودکار به صفحه ورود</li>
+            <li>بازگشت به صفحه اصلی پس از ورود</li>
+            <li>نمایش اطلاعات کاربر</li>
+            <li>لاگ فعالیت‌ها</li>
+            <li>مدیریت session</li>
+        </ul>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="{% url 'sso:sso_user_info' %}" class="btn btn-primary">
+            📊 اطلاعات API
+        </a>
+        <a href="{% url 'admin:index' %}" class="btn btn-success">
+            ⚙️ پنل مدیریت
+        </a>
+        <a href="{% url 'sso:sso_logout' %}" class="btn btn-danger" onclick="return confirm('آیا مطمئن هستید که می‌خواهید خارج شوید؟')">
+            🚪 خروج
+        </a>
+    </div>
+    
+    <div class="timestamp">
+        زمان بارگذاری صفحه: {{ current_time|date:"Y/m/d H:i:s" }}
+    </div>
+</div>
+
+<script>
+// نمایش پیام موفقیت
+document.addEventListener('DOMContentLoaded', function() {
+    // بررسی وجود توکن در URL (برای نمایش موفقیت‌آمیز بودن callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('token')) {
+        // نمایش پیام موفقیت‌آمیز بودن ورود
+        console.log('✅ ورود موفقیت‌آمیز انجام شد');
+        
+        // حذف توکن از URL برای امنیت
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+    
+    // نمایش اطلاعات کاربر در کنسول
+    console.log('👤 اطلاعات کاربر:', {
+        username: '{{ user.username }}',
+        email: '{{ user.email }}',
+        name: '{{ user.first_name }} {{ user.last_name }}',
+        isActive: {{ user.is_active|yesno:"true,false" }}
+    });
+});
+
+// تابع خروج
+function logout() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید خارج شوید؟')) {
+        // در اینجا می‌توانید API خروج را فراخوانی کنید
+        fetch('/api/logout/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+            },
+            body: JSON.stringify({
+                'client_id': 'test_page_client'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // حذف توکن از localStorage
+                localStorage.removeItem('auth_token');
+                // انتقال به صفحه اصلی
+                window.location.href = '/';
+            }
+        })
+        .catch(error => {
+            console.error('خطا در خروج:', error);
+            // در صورت خطا، باز هم به صفحه اصلی بروید
+            window.location.href = '/';
+        });
+    }
+}
+</script>
+{% endblock %}
