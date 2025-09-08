@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security Settings
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,auth.avinoo.ir').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,auth.avinoo.ir,87.248.150.86').split(',')
 
 # Microservice Configuration
 AUTH_SERVICE_DOMAIN = config('AUTH_SERVICE_DOMAIN', default='auth.avinoo.ir')
@@ -168,7 +168,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'HS256',  # Using HMAC temporarily
+    'ALGORITHM': 'RS256',  # Using RSA for better security
     'SIGNING_KEY': config('JWT_PRIVATE_KEY_PATH', default=BASE_DIR / 'keys' / 'private_key.pem'),
     'VERIFYING_KEY': config('JWT_PUBLIC_KEY_PATH', default=BASE_DIR / 'keys' / 'public_key.pem'),
     'AUDIENCE': AUTH_SERVICE_DOMAIN,

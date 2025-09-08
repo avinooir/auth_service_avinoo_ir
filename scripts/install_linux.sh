@@ -193,7 +193,7 @@ if [ ! -f ".env" ]; then
 # Django Settings
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
 DEBUG=False
-ALLOWED_HOSTS=$DOMAIN,www.$DOMAIN
+ALLOWED_HOSTS=$DOMAIN,www.$DOMAIN,87.248.150.86
 
 # Microservice Configuration
 AUTH_SERVICE_DOMAIN=$DOMAIN

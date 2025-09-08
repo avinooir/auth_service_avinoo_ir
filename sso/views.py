@@ -64,7 +64,7 @@ class SSOLoginView(APIView):
                 user = serializer.validated_data['user']
                 client = serializer.validated_data['client']
                 redirect_uri = serializer.validated_data['redirect_uri']
-                state = serializer.validated_data.get('state', get_random_string(32))
+                state = serializer.validated_data.get('state') or get_random_string(32)
                 
                 # Create SSO session
                 session = SSOSession.objects.create(
@@ -149,7 +149,7 @@ class SSORegisterView(APIView):
                     user = serializer.save()
                     client = serializer.validated_data['client']
                     redirect_uri = serializer.validated_data['redirect_uri']
-                    state = serializer.validated_data.get('state', get_random_string(32))
+                    state = serializer.validated_data.get('state') or get_random_string(32)
                     
                     # Create SSO session
                     session = SSOSession.objects.create(
@@ -783,18 +783,23 @@ def test_callback_page(request):
     
     try:
         # Validate the token (simple method)
+        access_token = None
         try:
             from rest_framework_simplejwt.tokens import AccessToken
             access_token = AccessToken(token)
             user_id = access_token['user_id']
             token_jti = access_token.get('jti', 'unknown')
-        except:
+            logger.info(f"JWT token parsed successfully for user_id: {user_id}")
+        except Exception as jwt_error:
+            logger.error(f"JWT parsing error: {str(jwt_error)}")
             # Fallback for simple tokens
             if token.startswith('test_token_'):
                 user_id = int(token.split('_')[2])
                 token_jti = 'simple_token'
+                logger.info(f"Using fallback token for user_id: {user_id}")
             else:
-                raise Exception("Invalid token format")
+                logger.error(f"Invalid token format: {token[:50]}...")
+                raise Exception(f"Invalid token format: {str(jwt_error)}")
         
         from apps.users.models import User
         user = User.objects.get(id=user_id)

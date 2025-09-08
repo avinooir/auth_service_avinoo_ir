@@ -40,7 +40,7 @@ class SSOSession(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
     client = models.ForeignKey(SSOClient, on_delete=models.CASCADE, verbose_name="کلاینت")
-    state = models.CharField(max_length=255, null=True, blank=True, verbose_name="وضعیت")
+    state = models.CharField(max_length=255, default='', blank=True, verbose_name="وضعیت")
     redirect_uri = models.URLField(verbose_name="آدرس بازگشت")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     expires_at = models.DateTimeField(verbose_name="تاریخ انقضا")
