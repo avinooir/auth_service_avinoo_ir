@@ -16,10 +16,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security Settings
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,auth.avinoo.ir,87.248.150.86').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'auth.avinoo.ir', '87.248.150.86']
 
 # Microservice Configuration
-AUTH_SERVICE_DOMAIN = config('AUTH_SERVICE_DOMAIN', default='auth.avinoo.ir')
+AUTH_SERVICE_DOMAIN = ['localhost', '127.0.0.1', 'auth.avinoo.ir', '87.248.150.86']
 ALLOWED_CLIENT_DOMAINS = config('ALLOWED_CLIENT_DOMAINS', default='app1.avinoo.ir,app2.avinoo.ir').split(',')
 
 # SSO Configuration
