@@ -558,6 +558,7 @@ def sso_callback_page(request):
     """
     client_id = request.GET.get('client_id')
     state = request.GET.get('state')
+    next_url = request.GET.get('next')  # Get the 'next' parameter
     
     if not client_id:
         return render(request, 'sso/error.html', {
@@ -576,13 +577,16 @@ def sso_callback_page(request):
             user=request.user,
             client=client,
             action='redirect',
-            request=request
+            request=request,
+            details={'next_url': next_url}
         )
         
-        # Redirect to client with token
+        # Build redirect URL with token and next parameter
         redirect_url = f"{client.redirect_uri}?token={access_token}"
         if state:
             redirect_url += f"&state={state}"
+        if next_url:
+            redirect_url += f"&next={urllib.parse.quote(next_url)}"
         
         return HttpResponseRedirect(redirect_url)
         

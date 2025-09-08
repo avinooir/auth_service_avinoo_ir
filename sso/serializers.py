@@ -37,15 +37,28 @@ class SSOLoginSerializer(serializers.Serializer):
         except SSOClient.DoesNotExist:
             logger.warning(f"Client not found: {client_id}")
             # Create client if it doesn't exist
-            client = SSOClient.objects.create(
-                name=f'Test Client {client_id}',
-                domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
-                client_id=client_id,
-                client_secret='test_secret_123',
-                redirect_uri=redirect_uri,
-                is_active=True
-            )
-            logger.info(f"Client created: {client.name}")
+            if client_id == 'meet':
+                # Special handling for Jitsi Meet client
+                client = SSOClient.objects.create(
+                    name='Jitsi Meet Application',
+                    domain='meet.avinoo.ir',
+                    client_id=client_id,
+                    client_secret='jitsi_meet_secret_2024',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Jitsi Meet client created: {client.name}")
+            else:
+                # Default client creation
+                client = SSOClient.objects.create(
+                    name=f'Test Client {client_id}',
+                    domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
+                    client_id=client_id,
+                    client_secret='test_secret_123',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Client created: {client.name}")
         
         # Validate redirect URI (allow exact match or callback pattern)
         if redirect_uri != client.redirect_uri and not redirect_uri.endswith('/callback/'):
@@ -103,15 +116,28 @@ class SSORegisterSerializer(serializers.ModelSerializer):
         except SSOClient.DoesNotExist:
             logger.warning(f"Client not found: {client_id}")
             # Create client if it doesn't exist
-            client = SSOClient.objects.create(
-                name=f'Test Client {client_id}',
-                domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
-                client_id=client_id,
-                client_secret='test_secret_123',
-                redirect_uri=redirect_uri,
-                is_active=True
-            )
-            logger.info(f"Client created: {client.name}")
+            if client_id == 'meet':
+                # Special handling for Jitsi Meet client
+                client = SSOClient.objects.create(
+                    name='Jitsi Meet Application',
+                    domain='meet.avinoo.ir',
+                    client_id=client_id,
+                    client_secret='jitsi_meet_secret_2024',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Jitsi Meet client created: {client.name}")
+            else:
+                # Default client creation
+                client = SSOClient.objects.create(
+                    name=f'Test Client {client_id}',
+                    domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
+                    client_id=client_id,
+                    client_secret='test_secret_123',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Client created: {client.name}")
         
         # Validate redirect URI (allow exact match or callback pattern)
         if redirect_uri != client.redirect_uri and not redirect_uri.endswith('/callback/'):
@@ -154,15 +180,28 @@ class SSOTokenValidationSerializer(serializers.Serializer):
         except SSOClient.DoesNotExist:
             logger.warning(f"Client not found: {client_id}")
             # Create client if it doesn't exist
-            client = SSOClient.objects.create(
-                name=f'Test Client {client_id}',
-                domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
-                client_id=client_id,
-                client_secret='test_secret_123',
-                redirect_uri=redirect_uri,
-                is_active=True
-            )
-            logger.info(f"Client created: {client.name}")
+            if client_id == 'meet':
+                # Special handling for Jitsi Meet client
+                client = SSOClient.objects.create(
+                    name='Jitsi Meet Application',
+                    domain='meet.avinoo.ir',
+                    client_id=client_id,
+                    client_secret='jitsi_meet_secret_2024',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Jitsi Meet client created: {client.name}")
+            else:
+                # Default client creation
+                client = SSOClient.objects.create(
+                    name=f'Test Client {client_id}',
+                    domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
+                    client_id=client_id,
+                    client_secret='test_secret_123',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Client created: {client.name}")
         
         attrs['client'] = client
         return attrs
@@ -188,15 +227,28 @@ class SSOCallbackSerializer(serializers.Serializer):
         except SSOClient.DoesNotExist:
             logger.warning(f"Client not found: {client_id}")
             # Create client if it doesn't exist
-            client = SSOClient.objects.create(
-                name=f'Test Client {client_id}',
-                domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
-                client_id=client_id,
-                client_secret='test_secret_123',
-                redirect_uri=redirect_uri,
-                is_active=True
-            )
-            logger.info(f"Client created: {client.name}")
+            if client_id == 'meet':
+                # Special handling for Jitsi Meet client
+                client = SSOClient.objects.create(
+                    name='Jitsi Meet Application',
+                    domain='meet.avinoo.ir',
+                    client_id=client_id,
+                    client_secret='jitsi_meet_secret_2024',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Jitsi Meet client created: {client.name}")
+            else:
+                # Default client creation
+                client = SSOClient.objects.create(
+                    name=f'Test Client {client_id}',
+                    domain=getattr(settings, 'AUTH_SERVICE_DOMAIN', '127.0.0.1:8000'),
+                    client_id=client_id,
+                    client_secret='test_secret_123',
+                    redirect_uri=redirect_uri,
+                    is_active=True
+                )
+                logger.info(f"Client created: {client.name}")
         
         # Validate session
         try:

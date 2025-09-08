@@ -31,8 +31,8 @@ def create_sso_clients():
     
     clients_data = [
         {
-            'name': 'App1 - اپلیکیشن اول',
-            'domain': 'app1.avinoo.ir',
+            'name': 'جلسه',
+            'domain': 'meet.avinoo.ir',
             'client_id': 'app1_client',
             'redirect_uri': 'https://app1.avinoo.ir/callback'
         },
