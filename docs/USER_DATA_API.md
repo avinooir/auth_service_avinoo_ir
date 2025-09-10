@@ -4,6 +4,16 @@
 
 این مستند تمام API های مربوط به دریافت اطلاعات کاربر در سیستم SSO شما را پوشش می‌دهد. این API ها به شما امکان دسترسی به اطلاعات کامل کاربران، نقش‌ها، مجوزها و لاگ‌های سیستم را می‌دهند.
 
+### 🔐 فیلدهای احراز هویت کاربر
+
+تمام API های SSO حالا شامل این فیلدهای مهم هستند:
+
+- **`is_superuser`**: آیا کاربر ابرمدیر است یا نه
+- **`is_staff`**: آیا کاربر دسترسی به پنل مدیریت دارد یا نه
+- **`is_active`**: آیا حساب کاربری فعال است یا نه
+
+این فیلدها به شما امکان کنترل دسترسی‌ها و نمایش رابط کاربری مناسب را می‌دهند.
+
 ## 🔗 Base URL
 
 ```
@@ -43,6 +53,8 @@ Authorization: Bearer <access_token>
         "last_name": "احمدی",
         "phone_number": "+989123456789",
         "is_active": true,
+        "is_superuser": false,
+        "is_staff": false,
         "date_joined": "2024-01-01T12:00:00Z",
         "last_login": "2024-01-01T15:30:00Z"
     }
@@ -82,7 +94,9 @@ Authorization: Bearer <access_token>
         "email": "user@example.com",
         "first_name": "علی",
         "last_name": "احمدی",
-        "is_active": true
+        "is_active": true,
+        "is_superuser": false,
+        "is_staff": false
     },
     "token_info": {
         "exp": 1640995200,
@@ -130,7 +144,9 @@ Authorization: Bearer <access_token>
         "username": "user123",
         "email": "user@example.com",
         "first_name": "علی",
-        "last_name": "احمدی"
+        "last_name": "احمدی",
+        "is_superuser": false,
+        "is_staff": false
     }
 }
 ```
@@ -169,7 +185,9 @@ Authorization: Bearer <access_token>
         "username": "newuser",
         "email": "newuser@example.com",
         "first_name": "محمد",
-        "last_name": "رضایی"
+        "last_name": "رضایی",
+        "is_superuser": false,
+        "is_staff": false
     }
 }
 ```

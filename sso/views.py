@@ -113,6 +113,8 @@ class SSOLoginView(APIView):
                         'email': user.email,
                         'first_name': user.first_name,
                         'last_name': user.last_name,
+                        'is_superuser': user.is_superuser,
+                        'is_staff': user.is_staff,
                     }
                 }
                 
@@ -192,6 +194,8 @@ class SSORegisterView(APIView):
                             'email': user.email,
                             'first_name': user.first_name,
                             'last_name': user.last_name,
+                            'is_superuser': user.is_superuser,
+                            'is_staff': user.is_staff,
                         }
                     }, status=status.HTTP_201_CREATED)
                     
@@ -260,6 +264,8 @@ class SSOTokenValidationView(APIView):
                         'first_name': user.first_name,
                         'last_name': user.last_name,
                         'is_active': user.is_active,
+                        'is_superuser': user.is_superuser,
+                        'is_staff': user.is_staff,
                     },
                     'token_info': {
                         'exp': access_token['exp'],
@@ -346,6 +352,8 @@ class SSOCallbackView(APIView):
                         'email': user.email,
                         'first_name': user.first_name,
                         'last_name': user.last_name,
+                        'is_superuser': user.is_superuser,
+                        'is_staff': user.is_staff,
                     }
                 }, status=status.HTTP_200_OK)
                 
@@ -482,6 +490,8 @@ class SSOUserInfoView(APIView):
                     'last_name': user.last_name,
                     'phone_number': user.phone_number,
                     'is_active': user.is_active,
+                    'is_superuser': user.is_superuser,
+                    'is_staff': user.is_staff,
                     'date_joined': user.date_joined,
                     'last_login': user.last_login,
                 }
