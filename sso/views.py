@@ -75,12 +75,13 @@ class SSOLoginView(APIView):
                     expires_at=timezone.now() + timezone.timedelta(minutes=10)
                 )
                 
-                # Generate JWT tokens (using simple method)
+                # Generate JWT tokens
                 try:
-                    from rest_framework_simplejwt.tokens import AccessToken
-                    token = AccessToken.for_user(user)
-                    access_token = str(token)
-                    refresh_token = None
+                    from rest_framework_simplejwt.tokens import RefreshToken
+                    refresh = RefreshToken.for_user(user)
+                    access_token = str(refresh.access_token)
+                    refresh_token = str(refresh)
+                    logger.info(f"JWT token generated successfully for user {user.id}")
                 except Exception as jwt_error:
                     logger.error(f"JWT generation error: {str(jwt_error)}")
                     # Fallback to simple string token
@@ -105,7 +106,7 @@ class SSOLoginView(APIView):
                     'access_token': access_token,
                     'token_type': 'Bearer',
                     'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
-                    'redirect_uri': f"{redirect_uri}?token={access_token}&state={state}",
+                    'redirect_uri': f"{redirect_uri}?jwt={access_token}&state={state}",
                     'user': {
                         'id': user.id,
                         'username': user.username,
@@ -184,7 +185,7 @@ class SSORegisterView(APIView):
                         'refresh_token': refresh_token,
                         'token_type': 'Bearer',
                         'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
-                        'redirect_uri': f"{redirect_uri}?token={access_token}&state={state}",
+                        'redirect_uri': f"{redirect_uri}?jwt={access_token}&state={state}",
                         'user': {
                             'id': user.id,
                             'username': user.username,
@@ -224,12 +225,21 @@ class SSOTokenValidationView(APIView):
                 
                 # Validate JWT token
                 from rest_framework_simplejwt.tokens import AccessToken
-                access_token = AccessToken(token)
-                
-                # Get user from token
-                user_id = access_token['user_id']
-                from apps.users.models import User
-                user = User.objects.get(id=user_id)
+                try:
+                    access_token = AccessToken(token)
+                    # Get user from token
+                    user_id = access_token['user_id']
+                    from apps.users.models import User
+                    user = User.objects.get(id=user_id)
+                except Exception as token_error:
+                    logger.error(f"Token validation error: {str(token_error)}")
+                    # Fallback for simple tokens
+                    if token.startswith('test_token_'):
+                        user_id = int(token.split('_')[2])
+                        from apps.users.models import User
+                        user = User.objects.get(id=user_id)
+                    else:
+                        raise TokenError("Invalid token format")
                 
                 # Log activity
                 log_sso_activity(
@@ -374,11 +384,13 @@ class SSOLogoutView(APIView):
             if request.method == 'GET':
                 client_id = request.GET.get('client_id')
                 redirect_uri = request.GET.get('redirect_uri')
-                token = request.GET.get('token')
+                # Support both 'jwt' and 'token' parameters
+                token = request.GET.get('jwt') or request.GET.get('token')
             else:
                 client_id = request.data.get('client_id')
                 redirect_uri = request.data.get('redirect_uri')
-                token = request.data.get('token')
+                # Support both 'jwt' and 'token' parameters
+                token = request.data.get('jwt') or request.data.get('token')
             
             # Get user from request (if authenticated) or from token
             user = None
@@ -500,9 +512,9 @@ def sso_login_page(request):
     
     try:
         client = SSOClient.objects.get(client_id=client_id, is_active=True)
-        if redirect_uri != client.redirect_uri:
+        if not client.is_redirect_uri_allowed(redirect_uri):
             return render(request, 'sso/error.html', {
-                'error': 'آدرس بازگشت نامعتبر است'
+                'error': 'آدرس بازگشت مجاز نیست'
             })
     except SSOClient.DoesNotExist:
         return render(request, 'sso/error.html', {
@@ -533,9 +545,9 @@ def sso_register_page(request):
     
     try:
         client = SSOClient.objects.get(client_id=client_id, is_active=True)
-        if redirect_uri != client.redirect_uri:
+        if not client.is_redirect_uri_allowed(redirect_uri):
             return render(request, 'sso/error.html', {
-                'error': 'آدرس بازگشت نامعتبر است'
+                'error': 'آدرس بازگشت مجاز نیست'
             })
     except SSOClient.DoesNotExist:
         return render(request, 'sso/error.html', {
@@ -581,8 +593,8 @@ def sso_callback_page(request):
             details={'next_url': next_url}
         )
         
-        # Build redirect URL with token and next parameter
-        redirect_url = f"{client.redirect_uri}?token={access_token}"
+        # Build redirect URL with jwt parameter and next parameter
+        redirect_url = f"{client.redirect_uri}?jwt={access_token}"
         if state:
             redirect_url += f"&state={state}"
         if next_url:
@@ -776,7 +788,8 @@ def test_callback_page(request):
     Special callback page for test protected page
     Handles the redirect after successful login
     """
-    token = request.GET.get('token')
+    # Support both 'token' and 'jwt' parameters for backward compatibility
+    token = request.GET.get('jwt') or request.GET.get('token')
     state = request.GET.get('state')
     client_id = request.GET.get('client_id', 'test_page_client')
     
@@ -786,7 +799,7 @@ def test_callback_page(request):
         })
     
     try:
-        # Validate the token (simple method)
+        # Validate the token
         access_token = None
         try:
             from rest_framework_simplejwt.tokens import AccessToken

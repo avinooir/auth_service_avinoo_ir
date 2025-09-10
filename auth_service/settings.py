@@ -168,12 +168,12 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'RS256',  # Using RSA for better security
-    'SIGNING_KEY': config('JWT_PRIVATE_KEY_PATH', default=BASE_DIR / 'keys' / 'private_key.pem'),
-    'VERIFYING_KEY': config('JWT_PUBLIC_KEY_PATH', default=BASE_DIR / 'keys' / 'public_key.pem'),
-    'AUDIENCE': AUTH_SERVICE_DOMAIN,
-    'ISSUER': AUTH_SERVICE_DOMAIN,
-    'JWK_URL': f'https://{AUTH_SERVICE_DOMAIN}/auth/jwks/',
+    'ALGORITHM': 'HS256',  # Using HMAC for simplicity
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': SECRET_KEY,
+    'AUDIENCE': 'auth.avinoo.ir',
+    'ISSUER': 'auth.avinoo.ir',
+    'JWK_URL': 'https://auth.avinoo.ir/auth/jwks/',
     'LEEWAY': 0,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',

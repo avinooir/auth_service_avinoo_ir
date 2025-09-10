@@ -30,7 +30,7 @@ https://auth.avinoo.ir/sso/login/?client_id=meet&redirect_uri=https://meet.avino
 SSO کاربر را به callback هدایت می‌کند:
 
 ```
-https://meet.avinoo.ir/callback?token=JWT_TOKEN&next=/team1
+https://meet.avinoo.ir/callback?jwt=JWT_TOKEN&next=/team1
 ```
 
 ### مرحله ۳: Callback Processing
@@ -53,7 +53,7 @@ window.location.href = loginUrl;
 ```javascript
 // در callback.html
 const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('token');
+const jwt = urlParams.get('jwt');  // JWT parameter
 const next = urlParams.get('next') || '/';
 
 // اعتبارسنجی توکن
@@ -61,13 +61,13 @@ const response = await fetch('https://auth.avinoo.ir/sso/api/validate-token/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-        token: token,
+        token: jwt,
         client_id: 'meet'
     })
 });
 
 // ذخیره توکن و هدایت به جلسه
-localStorage.setItem('jitsi_token', token);
+localStorage.setItem('jitsi_token', jwt);
 window.location.href = next;
 ```
 

@@ -60,12 +60,10 @@ class SSOLoginSerializer(serializers.Serializer):
                 )
                 logger.info(f"Client created: {client.name}")
         
-        # Validate redirect URI (allow exact match or callback pattern)
-        if redirect_uri != client.redirect_uri and not redirect_uri.endswith('/callback/'):
-            # Log for debugging
-            logger.warning(f"Redirect URI mismatch: {redirect_uri} != {client.redirect_uri}")
-            # For now, allow any redirect URI for testing
-            pass
+        # Validate redirect URI using new domain-based validation
+        if not client.is_redirect_uri_allowed(redirect_uri):
+            logger.warning(f"Redirect URI not allowed: {redirect_uri} for client {client.client_id}")
+            raise serializers.ValidationError("آدرس بازگشت مجاز نیست.")
         
         # Authenticate user
         user = authenticate(username=username, password=password)
@@ -139,12 +137,10 @@ class SSORegisterSerializer(serializers.ModelSerializer):
                 )
                 logger.info(f"Client created: {client.name}")
         
-        # Validate redirect URI (allow exact match or callback pattern)
-        if redirect_uri != client.redirect_uri and not redirect_uri.endswith('/callback/'):
-            # Log for debugging
-            logger.warning(f"Redirect URI mismatch: {redirect_uri} != {client.redirect_uri}")
-            # For now, allow any redirect URI for testing
-            pass
+        # Validate redirect URI using new domain-based validation
+        if not client.is_redirect_uri_allowed(redirect_uri):
+            logger.warning(f"Redirect URI not allowed: {redirect_uri} for client {client.client_id}")
+            raise serializers.ValidationError("آدرس بازگشت مجاز نیست.")
         
         attrs['client'] = client
         return attrs

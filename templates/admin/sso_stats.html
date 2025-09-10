@@ -1,0 +1,132 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='sso' %}">SSO</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module aligned">
+    <h1>{{ title }}</h1>
+    
+    <div class="results">
+        <table id="result_list">
+            <thead>
+                <tr>
+                    <th scope="col">دسته‌بندی</th>
+                    <th scope="col">آمار</th>
+                    <th scope="col">توضیحات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="row1">
+                    <td><strong>کلاینت‌ها</strong></td>
+                    <td>
+                        <strong>کل:</strong> {{ total_clients }}<br>
+                        <strong>فعال:</strong> {{ active_clients }}<br>
+                        <strong>غیرفعال:</strong> {{ total_clients|add:"-"|add:active_clients }}
+                    </td>
+                    <td>تعداد کلاینت‌های ثبت شده در سیستم SSO</td>
+                </tr>
+                
+                <tr class="row2">
+                    <td><strong>جلسات</strong></td>
+                    <td>
+                        <strong>کل:</strong> {{ total_sessions }}<br>
+                        <strong>فعال:</strong> {{ active_sessions }}<br>
+                        <strong>منقضی:</strong> {{ expired_sessions }}
+                    </td>
+                    <td>جلسات احراز هویت SSO</td>
+                </tr>
+                
+                <tr class="row1">
+                    <td><strong>لاگ‌ها</strong></td>
+                    <td>
+                        <strong>کل:</strong> {{ total_logs }}<br>
+                        <strong>24 ساعت گذشته:</strong> {{ logs_24h }}<br>
+                        <strong>7 روز گذشته:</strong> {{ logs_7d }}<br>
+                        <strong>30 روز گذشته:</strong> {{ logs_30d }}
+                    </td>
+                    <td>لاگ‌های فعالیت‌های SSO</td>
+                </tr>
+                
+                <tr class="row2">
+                    <td><strong>فعالیت‌ها</strong></td>
+                    <td>
+                        <strong>ورود:</strong> {{ login_logs }}<br>
+                        <strong>خروج:</strong> {{ logout_logs }}<br>
+                        <strong>اعتبارسنجی توکن:</strong> {{ token_validations }}
+                    </td>
+                    <td>تعداد فعالیت‌های مختلف SSO</td>
+                </tr>
+                
+                <tr class="row1">
+                    <td><strong>کاربران فعال</strong></td>
+                    <td>
+                        <strong>24 ساعت گذشته:</strong> {{ active_users_24h }}
+                    </td>
+                    <td>کاربرانی که در 24 ساعت گذشته وارد شده‌اند</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="submit-row">
+        <a href="{% url 'admin:sso_ssoclient_changelist' %}" class="default">مدیریت کلاینت‌ها</a>
+        <a href="{% url 'admin:sso_ssosession_changelist' %}" class="default">مدیریت جلسات</a>
+        <a href="{% url 'admin:sso_ssoauditlog_changelist' %}" class="default">مدیریت لاگ‌ها</a>
+    </div>
+</div>
+
+<style>
+.results table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.results th, .results td {
+    padding: 12px;
+    text-align: right;
+    border: 1px solid #ddd;
+}
+
+.results th {
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
+
+.results .row1 {
+    background-color: #f9f9f9;
+}
+
+.results .row2 {
+    background-color: #ffffff;
+}
+
+.submit-row {
+    margin-top: 20px;
+    padding: 10px 0;
+}
+
+.submit-row a {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: #417690;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.submit-row a:hover {
+    background-color: #205067;
+}
+</style>
+{% endblock %}

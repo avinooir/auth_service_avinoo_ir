@@ -19,7 +19,18 @@ class SSOClient(models.Model):
     domain = models.CharField(max_length=255, unique=True, verbose_name="دامنه")
     client_id = models.CharField(max_length=100, unique=True, verbose_name="شناسه کلاینت")
     client_secret = models.CharField(max_length=255, verbose_name="رمز کلاینت")
-    redirect_uri = models.URLField(verbose_name="آدرس بازگشت")
+    redirect_uri = models.URLField(verbose_name="آدرس بازگشت اصلی")
+    allowed_redirect_uris = models.JSONField(
+        default=list, 
+        blank=True, 
+        verbose_name="آدرس‌های بازگشت مجاز",
+        help_text="لیست آدرس‌های بازگشت مجاز برای این کلاینت"
+    )
+    allow_any_path = models.BooleanField(
+        default=False,
+        verbose_name="اجازه هر مسیر",
+        help_text="اگر فعال باشد، هر مسیری روی دامنه این کلاینت مجاز است"
+    )
     is_active = models.BooleanField(default=True, verbose_name="فعال")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ به‌روزرسانی")
@@ -31,6 +42,48 @@ class SSOClient(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.domain})"
+    
+    def is_redirect_uri_allowed(self, redirect_uri):
+        """
+        Check if a redirect URI is allowed for this client
+        If allow_any_path=True: accepts ANY path on the domain
+        If allow_any_path=False: uses exact match or allowed_redirect_uris
+        """
+        from urllib.parse import urlparse
+        
+        try:
+            # Parse the redirect URI
+            parsed_uri = urlparse(redirect_uri)
+            redirect_domain = parsed_uri.netloc.lower()
+            client_domain = self.domain.lower()
+            
+            # Check if domains match (exact or subdomain)
+            domain_matches = (
+                redirect_domain == client_domain or 
+                redirect_domain.endswith(f'.{client_domain}')
+            )
+            
+            if not domain_matches:
+                return False
+            
+            # If allow_any_path is enabled, accept any path on the domain
+            if self.allow_any_path:
+                return True
+            
+            # For strict validation, check allowed_redirect_uris
+            # Check exact match in allowed_redirect_uris
+            if redirect_uri in self.allowed_redirect_uris:
+                return True
+            
+            # Check if redirect_uri starts with any allowed pattern
+            for allowed_uri in self.allowed_redirect_uris:
+                if redirect_uri.startswith(allowed_uri):
+                    return True
+            
+            return False
+            
+        except Exception:
+            return False
 
 
 class SSOSession(models.Model):
