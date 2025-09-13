@@ -20,7 +20,7 @@ class MeetJWTGenerator:
     def __init__(self):
         self.app_id = "meet_avinoo"
         self.domain = "meet.avinoo.ir"
-        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', 'super_secret_key_98765')
+        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', '9vLgmQ9ooozwd7qnfawWGqlDMwAglP16byH5AMdn72hSTLBLBxoNErYrktCDshTE')
         self.external_api_url = getattr(settings, 'MEET_EXTERNAL_API_URL', 'http://avinoo.ir/api/meets/access/')
     
     def check_user_access(self, room_name, user_guid):
