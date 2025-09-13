@@ -20,7 +20,7 @@ class MeetJWTGenerator:
     def __init__(self):
         self.app_id = "meet_avinoo"
         self.domain = "meet.avinoo.ir"
-        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', 'meet_secret_key_2024')
+        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', 'super_secret_key_98765')
         self.external_api_url = getattr(settings, 'MEET_EXTERNAL_API_URL', 'http://avinoo.ir/api/meets/access/')
     
     def check_user_access(self, room_name, user_guid):
@@ -92,28 +92,28 @@ class MeetJWTGenerator:
                 "exp": exp,
                 "nbf": nbf,
                 "moderator": is_moderator,
-                "context": {
-                    "user": {
-                        "id": str(user.id),
-                        "name": user_data.get('name', ''),
-                        "email": user_data.get('email', ''),
-                        "avatar": user_data.get('avatar', ''),
-                        "affiliation": user_data.get('affiliation', 'member'),
-                        "moderator": user_data.get('moderator', False),
-                        "region": user_data.get('region', 'us-east'),
-                        "displayName": user_data.get('displayName', '')
-                    },
-                    "group": "dev-team",
-                    "features": {
-                        "livestreaming": True,
-                        "recording": True,
-                        "screen-sharing": True,
-                        "sip": False,
-                        "etherpad": False,
-                        "transcription": True,
-                        "breakout-rooms": True
-                    }
+            "context": {
+                "user": {
+                    "id": str(user.id),
+                    "name": user_data.get('name', ''),
+                    "email": user_data.get('email', ''),
+                    "avatar": user_data.get('avatar', ''),
+                    "affiliation": user_data.get('affiliation', 'member'),
+                    "moderator": user_data.get('moderator', False),
+                    "region": user_data.get('region', 'us-east'),
+                    "displayName": user_data.get('displayName', '')
                 },
+                "group": "dev-team",
+                "features": {
+                    "livestreaming": True,
+                    "recording": True,
+                    "screen-sharing": True,
+                    "sip": False,
+                    "etherpad": False,
+                    "transcription": True,
+                    "breakout-rooms": True
+                }
+            },
                 "identity": {
                     "type": "user",
                     "guest": False,

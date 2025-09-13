@@ -643,7 +643,7 @@ def handle_meet_callback(request, client, state, next_url):
         redirect_uri = client.redirect_uri
         if 'meet.avinoo.ir/' in redirect_uri:
             room_name = redirect_uri.split('meet.avinoo.ir/')[-1]
-            if room_name and room_name != 'roomname':  # Skip placeholder
+            if room_name:  # Process any room name
                 # Get JWT generator
                 jwt_generator = get_meet_jwt_generator()
                 
