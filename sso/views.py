@@ -650,40 +650,33 @@ def handle_meet_callback(request, client, state, next_url):
                 # Check user access to the room
                 access_data = jwt_generator.check_user_access(room_name, request.user.guid)
                 
-                if access_data and access_data.get('has_access'):
-                    # Generate meet JWT token
-                    meet_jwt = jwt_generator.generate_meet_jwt(request.user, room_name, access_data)
+                # Generate meet JWT token (always generate, use default access if API fails)
+                meet_jwt = jwt_generator.generate_meet_jwt(request.user, room_name, access_data)
+                
+                if meet_jwt:
+                    # Log activity
+                    log_sso_activity(
+                        user=request.user,
+                        client=client,
+                        action='meet_redirect',
+                        request=request,
+                        details={
+                            'room_name': room_name,
+                            'access_type': access_data.get('user_type', 'participant') if access_data else 'default',
+                            'has_access': access_data.get('has_access', True) if access_data else True
+                        }
+                    )
                     
-                    if meet_jwt:
-                        # Log activity
-                        log_sso_activity(
-                            user=request.user,
-                            client=client,
-                            action='meet_redirect',
-                            request=request,
-                            details={
-                                'room_name': room_name,
-                                'access_type': access_data.get('user_type', 'participant'),
-                                'has_access': True
-                            }
-                        )
-                        
-                        # Build redirect URL with meet JWT
-                        redirect_url = f"https://meet.avinoo.ir/{room_name}?jwt={meet_jwt}"
-                        if state:
-                            redirect_url += f"&state={state}"
-                        
-                        return HttpResponseRedirect(redirect_url)
-                    else:
-                        logger.error(f"Failed to generate meet JWT for user {request.user.username} in room {room_name}")
-                        return render(request, 'sso/error.html', {
-                            'error': 'خطا در تولید توکن احراز هویت جلسه'
-                        })
+                    # Build redirect URL with meet JWT
+                    redirect_url = f"https://meet.avinoo.ir/{room_name}?jwt={meet_jwt}"
+                    if state:
+                        redirect_url += f"&state={state}"
+                    
+                    return HttpResponseRedirect(redirect_url)
                 else:
-                    # User doesn't have access to the room
-                    logger.warning(f"User {request.user.username} denied access to room {room_name}")
+                    logger.error(f"Failed to generate meet JWT for user {request.user.username} in room {room_name}")
                     return render(request, 'sso/error.html', {
-                        'error': 'شما دسترسی لازم برای ورود به این جلسه را ندارید'
+                        'error': 'خطا در تولید توکن احراز هویت جلسه'
                     })
             else:
                 # No specific room, use default redirect
