@@ -20,14 +20,19 @@ class MeetJWTGenerator:
     def __init__(self):
         self.app_id = "meet_avinoo"
         self.domain = "meet.avinoo.ir"
-        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', '9vLgmQ9ooozwd7qnfawWGqlDMwAglP16byH5AMdn72hSTLBLBxoNErYrktCDshTE')
+        self.app_secret = getattr(settings, 'MEET_JWT_SECRET', 'super_secret_key_98765')
         self.external_api_url = getattr(settings, 'MEET_EXTERNAL_API_URL', 'http://avinoo.ir/api/meets/access/')
     
-    def check_user_access(self, room_name, user_guid):
+    def check_user_access(self, room_name, user):
         """
         Check user access to meet room via external API
+        Returns tuple: (access_data, error_message)
         """
         try:
+            # استفاده از GUID کاربر از فیلد guid در مدل User
+            user_guid = user.guid
+            logger.info(f"Checking access for user {user.username} (GUID: {user_guid}) to room {room_name}")
+            
             response = requests.get(self.external_api_url, params={
                 'room_name': room_name,
                 'user_guid': str(user_guid)
@@ -36,14 +41,83 @@ class MeetJWTGenerator:
             if response.status_code == 200:
                 data = response.json()
                 if data.get('success'):
-                    return data['data']
+                    access_data = data['data']
+                    
+                    # بررسی دسترسی کاربر
+                    if not access_data.get('has_access', False):
+                        return None, "شما دسترسی به این جلسه ندارید"
+                    
+                    # بررسی وضعیت جلسه
+                    status = access_data.get('status', '')
+                    if status == 'past':
+                        return None, "این جلسه به پایان رسیده است"
+                    elif status == 'upcoming':
+                        start_time = access_data.get('start_time', '')
+                        return None, f"جلسه هنوز شروع نشده است. زمان شروع: {start_time}"
+                    elif status == 'ongoing':
+                        return access_data, None
+                    else:
+                        return access_data, None
+                else:
+                    # اگر API کاربر را نشناسد، خطا نمایش بده
+                    error_msg = data.get('error', 'کاربر یافت نشد')
+                    logger.warning(f"API user not found for GUID: {user_guid}, error: {error_msg}")
+                    return None, f"کاربر در سیستم جلسات یافت نشد: {error_msg}"
+            else:
+                # اگر API در دسترس نباشد، خطا نمایش بده
+                if response.status_code == 404:
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('error', 'کاربر یافت نشد')
+                        logger.warning(f"API user not found (404): {error_msg.encode('utf-8', 'ignore').decode('utf-8')}")
+                        return None, f"کاربر در سیستم جلسات یافت نشد: {error_msg}"
+                    except:
+                        logger.warning(f"API user not found (404)")
+                        return None, "کاربر در سیستم جلسات یافت نشد"
+                else:
+                    logger.warning(f"API unavailable (status: {response.status_code})")
+                    return None, f"خطا در ارتباط با سرور جلسات (کد: {response.status_code})"
             
-            logger.warning(f"External API check failed for room: {room_name}, user: {user_guid}")
-            return None
-            
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout checking user access for room: {room_name}, user: {user_guid}")
+            return None, "خطا در ارتباط با سرور - زمان انتظار به پایان رسید"
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Connection error checking user access for room: {room_name}, user: {user_guid}")
+            return None, "خطا در ارتباط با سرور"
         except Exception as e:
             logger.error(f"Error checking user access: {str(e)}")
-            return None
+            return None, "خطای غیرمنتظره در بررسی دسترسی"
+    
+    def _get_default_access_data(self, room_name):
+        """
+        اطلاعات پیش‌فرض دسترسی برای زمانی که API در دسترس نیست
+        """
+        from datetime import datetime, timedelta
+        
+        # زمان فعلی
+        now = datetime.now()
+        
+        # اطلاعات پیش‌فرض - جلسه در حال برگزاری
+        start_time = now - timedelta(minutes=30)  # جلسه 30 دقیقه پیش شروع شده
+        end_time = now + timedelta(hours=1)       # جلسه 1 ساعت دیگر تمام می‌شود
+        
+        return {
+            'meet_id': 1,
+            'meet_title': f'جلسه {room_name}',
+            'room_name': room_name,
+            'meeting_type': 'online',
+            'meeting_link': f'http://meet.avinoo.ir/{room_name}',
+            'start_time': start_time.isoformat() + '+00:00',
+            'end_time': end_time.isoformat() + '+00:00',
+            'status': 'ongoing',
+            'has_access': True,
+            'user_type': 'participant',
+            'is_organizer': False,
+            'is_participant': True,
+            'is_active': True,
+            'is_upcoming': False,
+            'is_past': False
+        }
     
     def generate_meet_jwt(self, user, room_name, access_data=None):
         """
@@ -62,8 +136,8 @@ class MeetJWTGenerator:
                 token_start = start_time - timedelta(minutes=10)
                 token_end = end_time + timedelta(minutes=10)
                 
-                # Ensure token doesn't start in the past
-                if token_start < now:
+                # Ensure token doesn't start in the future
+                if token_start > now:
                     token_start = now
                 
                 exp = int(token_end.timestamp())
@@ -108,10 +182,7 @@ class MeetJWTGenerator:
                     "livestreaming": True,
                     "recording": True,
                     "screen-sharing": True,
-                    "sip": False,
-                    "etherpad": False,
-                    "transcription": True,
-                    "breakout-rooms": True
+                    "transcription": True
                 }
             },
                 "identity": {

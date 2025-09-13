@@ -140,29 +140,68 @@
 {% block extra_js %}
 <script>
     document.getElementById('registerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
         // Validate password match
         const password = document.getElementById('password').value;
         const passwordConfirm = document.getElementById('password_confirm').value;
         
         if (password !== passwordConfirm) {
-            e.preventDefault();
             showAlert('رمزهای عبور مطابقت ندارند', 'danger');
             return;
         }
         
         // Validate password strength
         if (password.length < 8) {
-            e.preventDefault();
             showAlert('رمز عبور باید حداقل 8 کاراکتر باشد', 'danger');
             return;
         }
         
         setLoading('registerForm', true);
         
-        // Simulate API call (replace with actual AJAX call)
-        setTimeout(() => {
+        // Get form data
+        const formData = new FormData(this);
+        const data = {
+            username: formData.get('username'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            password_confirm: formData.get('password_confirm'),
+            first_name: formData.get('first_name'),
+            last_name: formData.get('last_name'),
+            phone_number: formData.get('phone_number'),
+            client_id: formData.get('client_id'),
+            redirect_uri: formData.get('redirect_uri'),
+            state: formData.get('state')
+        };
+        
+        // Send AJAX request
+        fetch('{% url "sso:sso_register" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
             setLoading('registerForm', false);
-        }, 2000);
+            
+            if (data.success) {
+                showAlert(data.message || 'حساب کاربری با موفقیت ایجاد شد', 'success');
+                // Redirect to callback URL
+                setTimeout(() => {
+                    window.location.href = data.redirect_uri;
+                }, 1500);
+            } else {
+                showAlert(data.error || 'خطا در ایجاد حساب کاربری', 'danger');
+            }
+        })
+        .catch(error => {
+            setLoading('registerForm', false);
+            showAlert('خطا در ارتباط با سرور', 'danger');
+            console.error('Error:', error);
+        });
     });
     
     // Real-time password validation

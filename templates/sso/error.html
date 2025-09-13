@@ -13,9 +13,23 @@
     <div class="alert alert-danger">
         <h5 class="alert-heading">
             <i class="fas fa-times-circle me-2"></i>
-            خطا در احراز هویت
+            {% if room_name %}خطا در دسترسی به جلسه{% else %}خطا در احراز هویت{% endif %}
         </h5>
         <p class="mb-0">{{ error|default:"خطای نامشخصی رخ داده است." }}</p>
+        
+        {% if room_name %}
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>نام جلسه:</strong> {{ room_name }}
+            </div>
+            {% if user_name %}
+            <div class="col-md-6">
+                <strong>کاربر:</strong> {{ user_name }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     
     <div class="mt-4">

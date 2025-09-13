@@ -6,6 +6,7 @@ import logging
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -102,12 +103,31 @@ class SSOLoginView(APIView):
                 session.is_used = True
                 session.save()
                 
-                response_data = {
-                    'success': True,
-                    'access_token': access_token,
-                    'token_type': 'Bearer',
-                    'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
-                    'redirect_uri': f"{redirect_uri}?jwt={access_token}&state={state}",
+                # Store user data in session for callback
+                request.session['sso_user_data'] = {
+                    'user_id': user.id,
+                    'username': user.username,
+                    'email': user.email
+                }
+                
+                # Special handling for meet.avinoo.ir
+                if client.client_id == 'meet_avinoo':
+                    # For meet.avinoo.ir, redirect to callback page to generate meet JWT
+                    callback_url = f"/callback/?client_id={client.client_id}&redirect_uri={redirect_uri}&state={state}"
+                    response_data = {
+                        'success': True,
+                        'access_token': access_token,
+                        'token_type': 'Bearer',
+                        'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                        'redirect_uri': callback_url,
+                    }
+                else:
+                    response_data = {
+                        'success': True,
+                        'access_token': access_token,
+                        'token_type': 'Bearer',
+                        'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                        'redirect_uri': f"{redirect_uri}?jwt={access_token}&state={state}",
                     'user': {
                         'id': user.id,
                         'guid': str(user.guid),
@@ -576,7 +596,117 @@ def sso_register_page(request):
     })
 
 
-@login_required
+class SSORegisterView(APIView):
+    """
+    API endpoint for user registration
+    """
+    permission_classes = [AllowAny]  # اجازه دسترسی بدون authentication
+    
+    def post(self, request):
+        """
+        Register a new user
+        """
+        try:
+            data = request.data
+            
+            # Validate required fields
+            required_fields = ['username', 'email', 'password', 'password_confirm', 'client_id', 'redirect_uri']
+            for field in required_fields:
+                if not data.get(field):
+                    return Response({
+                        'success': False,
+                        'error': f'فیلد {field} الزامی است'
+                    }, status=400)
+            
+            # Validate password match
+            if data['password'] != data['password_confirm']:
+                return Response({
+                    'success': False,
+                    'error': 'رمزهای عبور مطابقت ندارند'
+                }, status=400)
+            
+            # Validate password strength
+            if len(data['password']) < 8:
+                return Response({
+                    'success': False,
+                    'error': 'رمز عبور باید حداقل 8 کاراکتر باشد'
+                }, status=400)
+            
+            # Import User model
+            from apps.users.models import User
+            
+            # Check if username already exists
+            if User.objects.filter(username=data['username']).exists():
+                return Response({
+                    'success': False,
+                    'error': 'این نام کاربری قبلاً استفاده شده است'
+                }, status=400)
+            
+            # Check if email already exists
+            if User.objects.filter(email=data['email']).exists():
+                return Response({
+                    'success': False,
+                    'error': 'این ایمیل قبلاً استفاده شده است'
+                }, status=400)
+            
+            # Create new user
+            user = User.objects.create_user(
+                username=data['username'],
+                email=data['email'],
+                password=data['password'],
+                first_name=data.get('first_name', ''),
+                last_name=data.get('last_name', ''),
+                phone_number=data.get('phone_number', ''),
+                is_active=True,  # فعال کردن کاربر بدون تایید ایمیل
+                is_email_verified=False  # ایمیل تایید نشده
+            )
+            
+            # Log registration activity (optional)
+            try:
+                log_sso_activity(
+                    user=user,
+                    client=None,
+                    action='register',
+                    request=request,
+                    details={'registration_method': 'email'}
+                )
+            except Exception as log_error:
+                logger.warning(f"Failed to log registration activity: {str(log_error)}")
+            
+            # Auto-login the user (optional for API)
+            try:
+                login(request, user)
+            except Exception as login_error:
+                logger.warning(f"Failed to auto-login user: {str(login_error)}")
+            
+            # Store user data in session for callback
+            request.session['sso_user_data'] = {
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email
+            }
+            
+            # Build redirect URL
+            redirect_uri = data['redirect_uri']
+            if data.get('state'):
+                redirect_uri += f"&state={data['state']}"
+            
+            return Response({
+                'success': True,
+                'message': 'حساب کاربری با موفقیت ایجاد شد',
+                'redirect_uri': redirect_uri
+            })
+            
+        except Exception as e:
+            import traceback
+            logger.error(f"Registration error: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return Response({
+                'success': False,
+                'error': f'خطا در ایجاد حساب کاربری: {str(e)}'
+            }, status=500)
+
+
 @never_cache
 def sso_callback_page(request):
     """
@@ -591,20 +721,39 @@ def sso_callback_page(request):
             'error': 'شناسه کلاینت ارسال نشده است'
         })
     
+    # Get user from session or request
+    user = request.user if request.user.is_authenticated else None
+    
+    # If no user, try to get from session
+    if not user:
+        # Try to get user from session data
+        session_data = request.session.get('sso_user_data')
+        if session_data:
+            from apps.users.models import User
+            try:
+                user = User.objects.get(id=session_data.get('user_id'))
+            except User.DoesNotExist:
+                pass
+    
+    if not user:
+        return render(request, 'sso/error.html', {
+            'error': 'کاربر احراز هویت نشده است'
+        })
+    
     try:
         client = SSOClient.objects.get(client_id=client_id, is_active=True)
         
         # Special handling for meet.avinoo.ir
         if client_id == 'meet_avinoo':
-            return handle_meet_callback(request, client, state, next_url)
+            return handle_meet_callback(request, client, state, next_url, user)
         
         # Generate JWT tokens for other clients
-        refresh = RefreshToken.for_user(request.user)
+        refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         
         # Log activity
         log_sso_activity(
-            user=request.user,
+            user=user,
             client=client,
             action='redirect',
             request=request,
@@ -631,16 +780,16 @@ def sso_callback_page(request):
         })
 
 
-def handle_meet_callback(request, client, state, next_url):
+def handle_meet_callback(request, client, state, next_url, user):
     """
     Handle callback for meet.avinoo.ir with room access check
     """
     try:
         from apps.meet.jwt_utils import get_meet_jwt_generator
         
-        # Extract room name from redirect_uri
+        # Extract room name from redirect_uri parameter (not client.redirect_uri)
         # Expected format: https://meet.avinoo.ir/roomname
-        redirect_uri = client.redirect_uri
+        redirect_uri = request.GET.get('redirect_uri') or client.redirect_uri
         if 'meet.avinoo.ir/' in redirect_uri:
             room_name = redirect_uri.split('meet.avinoo.ir/')[-1]
             if room_name:  # Process any room name
@@ -648,15 +797,23 @@ def handle_meet_callback(request, client, state, next_url):
                 jwt_generator = get_meet_jwt_generator()
                 
                 # Check user access to the room
-                access_data = jwt_generator.check_user_access(room_name, request.user.guid)
+                access_data, error_message = jwt_generator.check_user_access(room_name, user)
                 
-                # Generate meet JWT token (always generate, use default access if API fails)
-                meet_jwt = jwt_generator.generate_meet_jwt(request.user, room_name, access_data)
+                if error_message:
+                    # نمایش پیام خطا به کاربر
+                    return render(request, 'sso/error.html', {
+                        'error': f'خطا در دسترسی به جلسه: {error_message}',
+                        'room_name': room_name,
+                        'user_name': user.username
+                    })
+                
+                # Generate meet JWT token
+                meet_jwt = jwt_generator.generate_meet_jwt(user, room_name, access_data)
                 
                 if meet_jwt:
                     # Log activity
                     log_sso_activity(
-                        user=request.user,
+                        user=user,
                         client=client,
                         action='meet_redirect',
                         request=request,
@@ -674,7 +831,7 @@ def handle_meet_callback(request, client, state, next_url):
                     
                     return HttpResponseRedirect(redirect_url)
                 else:
-                    logger.error(f"Failed to generate meet JWT for user {request.user.username} in room {room_name}")
+                    logger.error(f"Failed to generate meet JWT for user {user.username} in room {room_name}")
                     return render(request, 'sso/error.html', {
                         'error': 'خطا در تولید توکن احراز هویت جلسه'
                     })
