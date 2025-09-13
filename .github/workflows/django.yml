@@ -1,0 +1,84 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: 87.248.150.86
+          port: 9011
+          username: root
+          key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            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
+            -----END OPENSSH PRIVATE KEY-----
+
+
+          script: |
+            cd /srv/auth/auth_service_avinoo_ir
+            git pull origin master
+            git stash
+            git pull origin master
+            source venv/bin/activate
+            pip install -r requirements.txt
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+            sudo chown -R www-data:www-data /srv/auth/auth_service_avinoo_ir
+            sudo chmod -R 775 /srv/auth/auth_service_avinoo_ir
+            sudo systemctl restart auth

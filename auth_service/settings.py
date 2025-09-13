@@ -49,6 +49,7 @@ LOCAL_APPS = [
     'apps.users',
     'apps.roles',
     'apps.permissions',
+    'apps.meet',
     'sso',
 ]
 

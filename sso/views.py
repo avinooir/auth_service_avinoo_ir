@@ -594,7 +594,11 @@ def sso_callback_page(request):
     try:
         client = SSOClient.objects.get(client_id=client_id, is_active=True)
         
-        # Generate JWT tokens
+        # Special handling for meet.avinoo.ir
+        if client_id == 'meet_avinoo':
+            return handle_meet_callback(request, client, state, next_url)
+        
+        # Generate JWT tokens for other clients
         refresh = RefreshToken.for_user(request.user)
         access_token = str(refresh.access_token)
         
@@ -622,6 +626,110 @@ def sso_callback_page(request):
         })
     except Exception as e:
         logger.error(f"SSO Callback page error: {str(e)}")
+        return render(request, 'sso/error.html', {
+            'error': 'خطا در پردازش بازگشت'
+        })
+
+
+def handle_meet_callback(request, client, state, next_url):
+    """
+    Handle callback for meet.avinoo.ir with room access check
+    """
+    try:
+        from apps.meet.jwt_utils import get_meet_jwt_generator
+        
+        # Extract room name from redirect_uri
+        # Expected format: https://meet.avinoo.ir/roomname
+        redirect_uri = client.redirect_uri
+        if 'meet.avinoo.ir/' in redirect_uri:
+            room_name = redirect_uri.split('meet.avinoo.ir/')[-1]
+            if room_name and room_name != 'roomname':  # Skip placeholder
+                # Get JWT generator
+                jwt_generator = get_meet_jwt_generator()
+                
+                # Check user access to the room
+                access_data = jwt_generator.check_user_access(room_name, request.user.guid)
+                
+                if access_data and access_data.get('has_access'):
+                    # Generate meet JWT token
+                    meet_jwt = jwt_generator.generate_meet_jwt(request.user, room_name, access_data)
+                    
+                    if meet_jwt:
+                        # Log activity
+                        log_sso_activity(
+                            user=request.user,
+                            client=client,
+                            action='meet_redirect',
+                            request=request,
+                            details={
+                                'room_name': room_name,
+                                'access_type': access_data.get('user_type', 'participant'),
+                                'has_access': True
+                            }
+                        )
+                        
+                        # Build redirect URL with meet JWT
+                        redirect_url = f"https://meet.avinoo.ir/{room_name}?jwt={meet_jwt}"
+                        if state:
+                            redirect_url += f"&state={state}"
+                        
+                        return HttpResponseRedirect(redirect_url)
+                    else:
+                        logger.error(f"Failed to generate meet JWT for user {request.user.username} in room {room_name}")
+                        return render(request, 'sso/error.html', {
+                            'error': 'خطا در تولید توکن احراز هویت جلسه'
+                        })
+                else:
+                    # User doesn't have access to the room
+                    logger.warning(f"User {request.user.username} denied access to room {room_name}")
+                    return render(request, 'sso/error.html', {
+                        'error': 'شما دسترسی لازم برای ورود به این جلسه را ندارید'
+                    })
+            else:
+                # No specific room, use default redirect
+                return handle_default_meet_redirect(request, client, state, next_url)
+        else:
+            # Invalid redirect URI format
+            return render(request, 'sso/error.html', {
+                'error': 'آدرس بازگشت نامعتبر است'
+            })
+            
+    except Exception as e:
+        logger.error(f"Meet callback error: {str(e)}")
+        return render(request, 'sso/error.html', {
+            'error': 'خطا در پردازش احراز هویت جلسه'
+        })
+
+
+def handle_default_meet_redirect(request, client, state, next_url):
+    """
+    Handle default redirect for meet.avinoo.ir when no specific room is provided
+    """
+    try:
+        # Generate regular JWT token for meet.avinoo.ir
+        refresh = RefreshToken.for_user(request.user)
+        access_token = str(refresh.access_token)
+        
+        # Log activity
+        log_sso_activity(
+            user=request.user,
+            client=client,
+            action='redirect',
+            request=request,
+            details={'next_url': next_url, 'type': 'default_meet_redirect'}
+        )
+        
+        # Build redirect URL
+        redirect_url = f"{client.redirect_uri}?jwt={access_token}"
+        if state:
+            redirect_url += f"&state={state}"
+        if next_url:
+            redirect_url += f"&next={urllib.parse.quote(next_url)}"
+        
+        return HttpResponseRedirect(redirect_url)
+        
+    except Exception as e:
+        logger.error(f"Default meet redirect error: {str(e)}")
         return render(request, 'sso/error.html', {
             'error': 'خطا در پردازش بازگشت'
         })

@@ -78,6 +78,29 @@ class User(AbstractUser):
         verbose_name="قفل شده تا"
     )
     
+    # Additional fields for meet integration
+    avatar_url = models.URLField(
+        null=True,
+        blank=True,
+        verbose_name="آدرس تصویر پروفایل",
+        help_text="آدرس کامل تصویر پروفایل کاربر"
+    )
+    
+    region = models.CharField(
+        max_length=50,
+        default="us-east",
+        verbose_name="منطقه",
+        help_text="منطقه جغرافیایی کاربر"
+    )
+    
+    display_name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="نام نمایشی",
+        help_text="نام کامل نمایشی کاربر"
+    )
+    
     class Meta:
         verbose_name = "کاربر"
         verbose_name_plural = "کاربران"
@@ -121,6 +144,19 @@ class User(AbstractUser):
         """Update last login IP address."""
         self.last_login_ip = ip_address
         self.save(update_fields=['last_login_ip'])
+    
+    def get_meet_user_data(self):
+        """Get user data formatted for meet JWT token."""
+        return {
+            "id": str(self.id),
+            "name": self.display_name or f"{self.first_name} {self.last_name}".strip() or self.username,
+            "email": self.email,
+            "avatar": self.avatar_url or "",
+            "affiliation": "owner" if self.is_superuser else "member",
+            "moderator": self.is_superuser or self.is_staff,
+            "region": self.region,
+            "displayName": self.display_name or f"{self.first_name} {self.last_name}".strip() or self.username
+        }
 
 
 class UserProfile(models.Model):
