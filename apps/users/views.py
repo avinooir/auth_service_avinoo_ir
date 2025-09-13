@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from .jwt_serializers import CustomRefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
 from django.utils.decorators import method_decorator
@@ -94,8 +95,8 @@ class UserLoginView(TokenObtainPairView):
                 client_ip = self.get_client_ip(request)
                 user.update_last_login_ip(client_ip)
                 
-                # Generate JWT tokens
-                refresh = RefreshToken.for_user(user)
+                # Generate JWT tokens with custom claims
+                refresh = CustomRefreshToken.for_user(user)
                 access_token = refresh.access_token
                 
                 # Get user data

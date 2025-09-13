@@ -78,7 +78,8 @@ class SSOLoginView(APIView):
                 # Generate JWT tokens
                 try:
                     from rest_framework_simplejwt.tokens import RefreshToken
-                    refresh = RefreshToken.for_user(user)
+                    from apps.users.jwt_serializers import CustomRefreshToken
+                    refresh = CustomRefreshToken.for_user(user)
                     access_token = str(refresh.access_token)
                     refresh_token = str(refresh)
                     logger.info(f"JWT token generated successfully for user {user.id}")
@@ -109,6 +110,7 @@ class SSOLoginView(APIView):
                     'redirect_uri': f"{redirect_uri}?jwt={access_token}&state={state}",
                     'user': {
                         'id': user.id,
+                        'guid': str(user.guid),
                         'username': user.username,
                         'email': user.email,
                         'first_name': user.first_name,
@@ -327,7 +329,8 @@ class SSOCallbackView(APIView):
                 user = session.user
                 
                 # Generate new JWT tokens
-                refresh = RefreshToken.for_user(user)
+                from apps.users.jwt_serializers import CustomRefreshToken
+                refresh = CustomRefreshToken.for_user(user)
                 access_token = str(refresh.access_token)
                 refresh_token = str(refresh)
                 
@@ -348,6 +351,7 @@ class SSOCallbackView(APIView):
                     'expires_in': settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
                     'user': {
                         'id': user.id,
+                        'guid': str(user.guid),
                         'username': user.username,
                         'email': user.email,
                         'first_name': user.first_name,

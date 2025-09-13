@@ -3,6 +3,7 @@ User models for authentication service.
 """
 
 import logging
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
@@ -20,6 +21,14 @@ class User(AbstractUser):
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
         message="شماره تلفن باید در فرمت صحیح وارد شود. مثال: '+989123456789'"
+    )
+    
+    # Global Unique Identifier
+    guid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name="شناسه یکتا جهانی"
     )
     
     # Additional fields

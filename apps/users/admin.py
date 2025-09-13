@@ -17,7 +17,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = [
         'username', 'email', 'phone_number', 'first_name', 'last_name',
         'is_active', 'is_staff', 'is_superuser', 'is_phone_verified',
-        'is_email_verified', 'date_joined', 'last_login'
+        'is_email_verified', 'date_joined', 'last_login', 'guid'
     ]
     
     list_filter = [
@@ -25,7 +25,7 @@ class UserAdmin(BaseUserAdmin):
         'is_email_verified', 'date_joined', 'last_login'
     ]
     
-    search_fields = ['username', 'email', 'phone_number', 'first_name', 'last_name']
+    search_fields = ['username', 'email', 'phone_number', 'first_name', 'last_name', 'guid']
     
     ordering = ['-date_joined']
     
@@ -33,6 +33,9 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('username', 'password')}),
         (_('Personal info'), {
             'fields': ('first_name', 'last_name', 'email', 'phone_number')
+        }),
+        (_('System Info'), {
+            'fields': ('guid',)
         }),
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
@@ -53,7 +56,7 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
     
-    readonly_fields = ['date_joined', 'last_login', 'last_login_ip']
+    readonly_fields = ['date_joined', 'last_login', 'last_login_ip', 'guid']
 
 
 @admin.register(UserProfile)
